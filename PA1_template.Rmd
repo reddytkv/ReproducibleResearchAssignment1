@@ -1,0 +1,123 @@
+---
+title: "PA1_template.Rmd"
+author: "Venkat"
+date: "7/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# ReproducibleResearch: Week2 Assignment for Peer Review
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+library(mice)
+```
+
+## Step1: Load and Read Data.
+```{r, echo=TRUE, results='show', message=FALSE, warning=FALSE}
+#download file directly from online and extract it
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", destfile = "activity.zip", mode = "wb")
+unzip("activity.zip")
+
+#Read the data and check the contents
+activity_data <- read.csv("activity.csv", header = TRUE)
+head(activity_data)
+```
+
+## Step 2: Histogram of total steps/day
+```{r, echo=TRUE, results='show', message=FALSE, warning=FALSE}
+# aggregate the 5 min data into day level
+stepsbydate <- activity_data %>% select(date,steps) %>% group_by(date) %>% summarize(totalsteps = sum(steps)) %>%na.omit()
+#plot the histogram
+hist(stepsbydate$totalsteps, xlab="Total Daily Steps", ylab="Freq", main="Histogram of Steps by Day", breaks = 15)
+```
+
+<br/>
+
+## Step 3: Mean and Median of steps/day
+```{r}
+stepsbydateMean <- mean(stepsbydate$totalsteps)
+stepsbydateMedian <- median(stepsbydate$totalsteps)
+
+```
+* Mean: `r stepsbydateMean`
+* Median: `r stepsbydateMedian`
+
+
+## Step 4: Time series Plot of Avg Steps taken per day
+```{r}
+databyinterval <- activity_data %>% select(interval, steps) %>% na.omit() %>% group_by(interval) %>% summarize(totalsteps = mean(steps))
+## Now plot the summary of steps
+ggplot(databyinterval, aes(x=interval, y=totalsteps))+geom_line()+labs(title="Time Series Plot", y="Avg # of steps taken", x="interval - 5 min")
+```
+
+## Step 5: The 5-minute interval where average contains max #of steps
+```{r}
+databyinterval[which(databyinterval$totalsteps == max(databyinterval$totalsteps)),]
+```
+## Step 6: Code to describe and show the strategy for imputing the missing data
+```{r}
+count_of_missing_values = length(which(is.na(activity_data$steps)))
+summary(activity_data)
+```
+* missing data rows: `r count_of_missing_values`
+<br/>
+Use impute function with mean and fill steps for the days they are missing.
+
+```{r}
+library(dplyr)
+replacewithmean <- function(num) replace(num, is.na(num),mean(num, na.rm = TRUE))
+activitydata_nomissing <- activity_data %>% group_by(interval) %>% mutate(steps = replacewithmean(steps))
+head(activitydata_nomissing)
+```
+
+```{r}
+new_activity_data = as.data.frame(activitydata_nomissing)
+head(new_activity_data)
+
+```
+
+```{r}
+count_of_missing_values2 = length(which(is.na(new_activity_data$steps)))
+
+```
+* Number of missing values(steps): `r count_of_missing_values2`
+
+```{r}
+summary(new_activity_data)
+```
+## Step 7: Histogram of Total steps taken for each day after missing values are imputed
+
+For the histogram sum up the steps for each day
+```{r}
+day_summary <- aggregate(new_activity_data$steps, by=list(new_activity_data$date), sum)
+
+names(day_summary)[1] = "date"
+names(day_summary)[2] = "totalsteps"
+head(day_summary)
+
+```
+
+```{r}
+hist(day_summary$totalsteps, xlab="Total Daily Steps",ylab="Freq" ,main="Histogram of Steps by Day after imputatiob", breaks = 15)
+```
+
+
+## Step 8: Panel split comparing the average number of steps taken per 5min interval across week days and weekends
+
+```{r}
+new_activity_data$weekend_flag <- ifelse(weekdays(as.Date(new_activity_data$date)) %in% c("Monday","Tuesday","Wednesday","Thursday","Friday"),"Weekday","Weekend")
+head(new_activity_data)
+```
+
+new_activity_data <- (new_activity_data %>% group_by(interval,weekend_flag) %>% summarise(Mean= mean(steps)))
+
+ggplot(new_activity_data, mapping = aes(x=interval, y=Mean)) + geom_line()+
+facet_frid(weekend_flag ~.) +xlab("Interval") +ylab("Mean of steps) + ggtitle("comparision of steps for each interval")
+
+
+## Step 9: All of R code needed to reproduce the results in the report.
