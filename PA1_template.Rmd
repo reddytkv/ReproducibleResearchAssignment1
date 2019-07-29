@@ -123,4 +123,6 @@ ggplot(new_activity_data, mapping = aes(x=interval, y=Mean)) + geom_line()+
 facet_grid(weekend_flag ~.) +xlab("Interval") +ylab("Mean of steps") + ggtitle("comparision of steps for each interval")
 ```
 
+Weekend steps summaries slightly higher then summaries steps recorded during the weekdays.
+
 ## Step 9: All of R code needed to reproduce the results in the report.
