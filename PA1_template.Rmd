@@ -2,7 +2,9 @@
 title: "PA1_template.Rmd"
 author: "Venkat"
 date: "7/26/2019"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -114,10 +116,11 @@ new_activity_data$weekend_flag <- ifelse(weekdays(as.Date(new_activity_data$date
 head(new_activity_data)
 ```
 
+```{r}
 new_activity_data <- (new_activity_data %>% group_by(interval,weekend_flag) %>% summarise(Mean= mean(steps)))
 
 ggplot(new_activity_data, mapping = aes(x=interval, y=Mean)) + geom_line()+
-facet_frid(weekend_flag ~.) +xlab("Interval") +ylab("Mean of steps) + ggtitle("comparision of steps for each interval")
-
+facet_grid(weekend_flag ~.) +xlab("Interval") +ylab("Mean of steps") + ggtitle("comparision of steps for each interval")
+```
 
 ## Step 9: All of R code needed to reproduce the results in the report.
